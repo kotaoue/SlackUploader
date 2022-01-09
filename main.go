@@ -30,7 +30,7 @@ func Main() error {
 	api := slack.New(*token)
 
 	if *delete {
-		deleteLatestMessage(api)
+		return deleteLatestMessage(api)
 	}
 
 	fp, err := os.Open("icon.png")
@@ -47,7 +47,10 @@ func Main() error {
 	)
 
 	fmt.Printf("%s\n", file.Permalink)
-	api.DeleteMessage(*chanelID, file.Shares.Public[*chanelID][0].Ts)
+	_, _, err = api.DeleteMessage(*chanelID, file.Shares.Public[*chanelID][0].Ts)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -58,9 +61,47 @@ func deleteLatestMessage(api *slack.Client) error {
 		return err
 	}
 
-	for _, v := range resp.Messages {
-		fmt.Printf("MsgID: %s, Text:%s, ReplyCount:%d, TimeStamp:%s\n", v.ClientMsgID, v.Text, v.ReplyCount, v.Timestamp)
-		api.DeleteMessage(*chanelID, v.Timestamp)
+	for _, m := range resp.Messages {
+		if m.ReplyCount > 0 {
+			fmt.Println("has replies")
+			if err := deleteReplies(api, m.Timestamp, ""); err != nil {
+				return err
+			}
+		}
+
+		_, _, err := api.DeleteMessage(*chanelID, m.Timestamp)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleteReplies(api *slack.Client, ts, cursor string) error {
+	p := &slack.GetConversationRepliesParameters{ChannelID: *chanelID, Timestamp: ts}
+	if cursor != "" {
+		p.Cursor = cursor
+	}
+
+	msgs, hasMore, nextCursor, err := api.GetConversationReplies(p)
+	if err != nil {
+		return err
+	}
+
+	for k, m := range msgs {
+		// index 0 is parent message
+		if k > 0 {
+			fmt.Printf("MsgID: %s, Text:%s, ReplyCount:%d, TimeStamp:%s\n", m.ClientMsgID, m.Text, m.ReplyCount, m.Timestamp)
+			_, _, err := api.DeleteMessage(*chanelID, m.Timestamp)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if hasMore {
+		deleteReplies(api, ts, nextCursor)
 	}
 
 	return nil
