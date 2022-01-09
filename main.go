@@ -1,12 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/slack-go/slack"
+)
+
+var (
+	chanelID = flag.String("ChannelID", "", "Upload target ChanelID cf.https://api.slack.com/methods/channels.list/test")
+	token    = flag.String("token", "", "Bot User OAuth Token cf.https://api.slack.com/authentication/token-types")
 )
 
 func init() {
@@ -21,25 +25,17 @@ func main() {
 }
 
 func Main() error {
-	api := slack.New(getToken())
-	user, err := api.GetUserInfo("U023BECGF")
+	api := slack.New(*token)
+
+	resp, err := api.GetConversationHistory(&slack.GetConversationHistoryParameters{ChannelID: *chanelID, Limit: 3})
 	if err != nil {
-		return err
+		fmt.Printf("%s\n", err)
+		return nil
 	}
-	fmt.Printf("ID: %s, Fullname: %s, Email: %s\n", user.ID, user.Profile.RealName, user.Profile.Email)
+
+	for _, v := range resp.Messages {
+		fmt.Printf("Text:%s, Replies:%d\n", v.Text, len(v.Replies))
+	}
 
 	return nil
-}
-
-func getToken() string {
-	fmt.Println("please input token")
-
-	s := bufio.NewScanner(os.Stdin)
-	for s.Scan() {
-		if s.Text() != "" {
-			break
-		}
-	}
-
-	return s.Text()
 }

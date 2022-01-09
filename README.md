@@ -12,3 +12,8 @@ Image upload to Slack
 ```
 curl -XPOST "https://slack.com/api/auth.test?token=<TOKEN>&pretty=1"
 ```
+
+## Usage
+```
+go run main.go -ChannelID=<Upload target ChannelID> -token=<Bot User OAuth Token>
+```
