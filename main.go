@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	userID   = flag.String("UserID", "", "Slack UserID")
 	chanelID = flag.String("ChannelID", "", "Upload target ChanelID cf.https://api.slack.com/methods/channels.list/test")
 	token    = flag.String("token", "", "Bot User OAuth Token cf.https://api.slack.com/authentication/token-types")
 )
@@ -34,8 +35,18 @@ func Main() error {
 	}
 
 	for _, v := range resp.Messages {
-		fmt.Printf("Text:%s, Replies:%d\n", v.Text, len(v.Replies))
+		fmt.Printf("MsgID: %s, Text:%s, ReplyCount:%d\n", v.ClientMsgID, v.Text, v.ReplyCount)
 	}
+
+	// respChannel, respTimestamp, err := api.PostMessage(*chanelID, slack.MsgOptionText("Hello World", true))
+	respTimestamp, err := api.PostEphemeral(*chanelID, *userID, slack.MsgOptionText("Hello World", true))
+	fmt.Printf("respTimestamp:%s\n", respTimestamp)
+
+	respTimestamp, err = api.PostEphemeral(*chanelID, *userID,
+		slack.MsgOptionText("Hello World2", true),
+		slack.MsgOptionTS(respTimestamp),
+	)
+	fmt.Printf("respTimestamp:%s\n", respTimestamp)
 
 	return nil
 }
