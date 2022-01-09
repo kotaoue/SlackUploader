@@ -33,6 +33,8 @@ func Main() error {
 		return deleteLatestMessage(api)
 	}
 
+	// file 一覧を取得
+
 	fp, err := os.Open("icon.png")
 	if err != nil {
 		return err
