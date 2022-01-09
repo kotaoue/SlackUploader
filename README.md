@@ -6,7 +6,6 @@ Image upload to Slack
 * [slack api:Access tokens](https://api.slack.com/authentication/token-types)
 * [slack api:Permission scopes](https://api.slack.com/scopes)
   * [files:write](https://api.slack.com/scopes/files:write)
-  * [im:write](https://api.slack.com/scopes/im:write)
 
 ## Preparation
 ```
