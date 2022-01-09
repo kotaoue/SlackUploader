@@ -1,5 +1,9 @@
 # SlackUploader
-Image upload to Slack
+1. This script uploads jpg or png to Slack: Recursively from the current directory.
+1. Script is delete messages after upload.
+1. And echo Permalinks.
+
+If you want to create a [Slackbot](https://slack.com/intl/en-in/help/articles/202026038-An-introduction-to-Slackbot) that displays images randomly: Try this script.
 
 ## Requirement
 * [slack-go/slack](https://github.com/slack-go/slack)
