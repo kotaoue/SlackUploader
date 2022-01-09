@@ -12,6 +12,7 @@ var (
 	userID   = flag.String("UserID", "", "Slack UserID")
 	chanelID = flag.String("ChannelID", "", "Upload target ChanelID cf.https://api.slack.com/methods/channels.list/test")
 	token    = flag.String("token", "", "Bot User OAuth Token cf.https://api.slack.com/authentication/token-types")
+	delete   = flag.Bool("delete", false, "Delete latest message")
 )
 
 func init() {
@@ -28,25 +29,39 @@ func main() {
 func Main() error {
 	api := slack.New(*token)
 
-	resp, err := api.GetConversationHistory(&slack.GetConversationHistoryParameters{ChannelID: *chanelID, Limit: 3})
+	if *delete {
+		deleteLatestMessage(api)
+	}
+
+	fp, err := os.Open("icon.png")
 	if err != nil {
-		fmt.Printf("%s\n", err)
-		return nil
+		return err
+	}
+
+	file, err := api.UploadFile(
+		slack.FileUploadParameters{
+			Reader:   fp,
+			Filename: fp.Name(),
+			Channels: []string{*chanelID},
+		},
+	)
+
+	fmt.Printf("%s\n", file.Permalink)
+	api.DeleteMessage(*chanelID, file.Shares.Public[*chanelID][0].Ts)
+
+	return nil
+}
+
+func deleteLatestMessage(api *slack.Client) error {
+	resp, err := api.GetConversationHistory(&slack.GetConversationHistoryParameters{ChannelID: *chanelID, Limit: 1})
+	if err != nil {
+		return err
 	}
 
 	for _, v := range resp.Messages {
-		fmt.Printf("MsgID: %s, Text:%s, ReplyCount:%d\n", v.ClientMsgID, v.Text, v.ReplyCount)
+		fmt.Printf("MsgID: %s, Text:%s, ReplyCount:%d, TimeStamp:%s\n", v.ClientMsgID, v.Text, v.ReplyCount, v.Timestamp)
+		api.DeleteMessage(*chanelID, v.Timestamp)
 	}
-
-	// respChannel, respTimestamp, err := api.PostMessage(*chanelID, slack.MsgOptionText("Hello World", true))
-	respTimestamp, err := api.PostEphemeral(*chanelID, *userID, slack.MsgOptionText("Hello World", true))
-	fmt.Printf("respTimestamp:%s\n", respTimestamp)
-
-	respTimestamp, err = api.PostEphemeral(*chanelID, *userID,
-		slack.MsgOptionText("Hello World2", true),
-		slack.MsgOptionTS(respTimestamp),
-	)
-	fmt.Printf("respTimestamp:%s\n", respTimestamp)
 
 	return nil
 }
